@@ -58,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent, bool is_simulation_mode)
     }
 
     // Start processing threads
-    std::thread od_thread(&MainWindow::objectDetectionThread, 
+    std::thread od_thread(&MainWindow::objectDetectionThread,
         object_detector,
         car_status,
         collision_warning.get()
@@ -66,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent, bool is_simulation_mode)
     od_thread.detach();
 
 #ifndef DISABLE_LANE_DETECTOR
-    std::thread ld_thread(&MainWindow::laneDetectionThread, 
+    std::thread ld_thread(&MainWindow::laneDetectionThread,
         lane_detector,
         car_status,
         this);
@@ -89,13 +89,13 @@ MainWindow::MainWindow(QWidget *parent, bool is_simulation_mode)
 
 void MainWindow::cameraCaptureThread(std::shared_ptr<CarStatus> car_status) {
     cv::VideoCapture video;
-    if (!video.open(0)) {
+    if (!video.open("nvarguscamerasrc sensor-id=0 ! video/x-raw(memory:NVMM), width=1280, height=720, format=(string)NV12, framerate=(fraction)60/1 ! nvvidconv  flip-method=2 ! video/x-raw, width=(int)1280, height=(int)720, format=(string)BGRx ! videoconvert ! appsink")) {
         QMessageBox::critical(
             nullptr, "Camera Error",
             "Could not read from camera");
         return;
     }
-    
+
     while (true) {
         Mat frame;
         video >> frame;
@@ -114,7 +114,7 @@ void MainWindow::showCameraWizard() {
 
 
 void MainWindow::updateCameraModel(
-    float car_width, float carpet_width, 
+    float car_width, float carpet_width,
     float car_to_carpet_distance, float carpet_length,
     float tl_x, float tl_y,
     float tr_x, float tr_y,
@@ -182,14 +182,14 @@ void MainWindow::warningMonitorThread(std::shared_ptr<CarStatus> car_status, Mai
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     }
-    
+
 }
 
 void MainWindow::objectDetectionThread(
     std::shared_ptr<ObjectDetector> object_detector,
     std::shared_ptr<CarStatus> car_status,
     CollisionWarningController *collision_warning) {
-        
+
     cv::Mat image;
     cv::Mat original_image;
 
@@ -225,7 +225,7 @@ void MainWindow::objectDetectionThread(
 
         // Collision warning
         car_status->setCollisionWarning(collision_warning->isInDangerSituation(image.size(), objects));
-        
+
     }
 }
 
@@ -261,7 +261,7 @@ void MainWindow::laneDetectionThread(
         std::vector<LaneLine> detected_lines = lane_detector->detectLaneLines(clone_img, lane_departure);
         car_status->setLaneDetectionTime(Timer::calcTimePassed(begin_time));
         car_status->setDetectedLaneLines(detected_lines);
-        #endif 
+        #endif
 
         if (car_status->getCarSpeed() >= MIN_SPEED_FOR_LANE_DEPARTURE_WARNING) {
             main_window->is_lane_departure_warning = lane_departure;
@@ -294,7 +294,7 @@ void MainWindow::carPropReaderThread(
         }
 
         this_thread::sleep_for(chrono::milliseconds(10));
-        
+
     }
 }
 
@@ -304,7 +304,7 @@ void MainWindow::playAudio(std::string audio_file) {
     if (!is_mute && (Timer::calcTimePassed(last_audio_time) > 2000
         || last_audio_file != audio_file)
     ) {
-        // Play a silent sound first to give HDMI enough time to 
+        // Play a silent sound first to give HDMI enough time to
         // start audio service
         system(("canberra-gtk-play -f sounds/silent.wav;canberra-gtk-play -f sounds/" + audio_file + " &").c_str());
         last_audio_time = Timer::getCurrentTime();
@@ -342,7 +342,7 @@ void MainWindow::startVideoGrabber() {
 
             #ifndef DISABLE_LANE_DETECTOR
             std::vector<LaneLine> detected_lane_lines = car_status->getDetectedLaneLines();
-                
+
             if (!detected_lane_lines.empty()) {
 
                 #ifdef DEBUG_LANE_DETECTOR_SHOW_LINE_MASK
@@ -366,7 +366,7 @@ void MainWindow::startVideoGrabber() {
 
                         rgb_lane_result.setTo(Scalar(255, 255, 255), lane_line_mask_copy > 0.5);
                         draw_frame.setTo(Scalar(0, 0, 0), lane_line_mask_copy > 0.5);
-                        
+
                         cv::imwrite(std::to_string(frame_ids) + "-lanemask.png", rgb_lane_result);
 
                         cv::addWeighted(draw_frame, 1, rgb_lane_result, 1, 0,
@@ -386,7 +386,7 @@ void MainWindow::startVideoGrabber() {
                         cv::waitKey(1);
                     }
                 #endif
-                
+
             }
 
             #endif
@@ -415,9 +415,9 @@ void MainWindow::startVideoGrabber() {
                 #ifndef DISABLE_LANE_DETECTOR
                 cv::putText(draw_frame, "Lane detection: " + std::to_string(lane_detection_time) + " ms", Point2f(10,20), FONT_HERSHEY_PLAIN, 0.8,  Scalar(0,0,255,255), 1.5);
                 #endif
-                
+
             #endif
-            
+
 
             std::vector<TrafficObject> detected_objects = car_status->getDetectedObjects();
 
@@ -439,7 +439,7 @@ void MainWindow::startVideoGrabber() {
             if (is_lane_departure_warning || Timer::calcTimePassed(getLastLaneDepartureWarningTime()) < 4000) {
                 ml_cam::place_overlay(draw_frame, lane_departure_warning_icon, 32, 144);
             }
-    
+
             // Show current image
             QImage qimg(draw_frame.data, static_cast<int>(draw_frame.cols),
                         static_cast<int>(draw_frame.rows),
