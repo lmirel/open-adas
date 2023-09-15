@@ -89,6 +89,8 @@ MainWindow::MainWindow(QWidget *parent, bool is_simulation_mode)
 
 void MainWindow::cameraCaptureThread(std::shared_ptr<CarStatus> car_status) {
     cv::VideoCapture video;
+    //               v4l2src device=/dev/video1 ! video/x-raw, width=1280, height=720, framerate=(fraction)60/1 ! videoconvert !  video/x-raw, width=(int)1280, height=(int)720, format=(string)BGR ! appsink
+    //if (!video.open("v4l2src device=/dev/video1 ! video/x-raw, width=1280, height=720, format=(string)YUY2 ! appsink")) {
     if (!video.open("nvarguscamerasrc sensor-id=0 ! video/x-raw(memory:NVMM), width=1280, height=720, format=(string)NV12, framerate=(fraction)60/1 ! nvvidconv  flip-method=2 ! video/x-raw, width=(int)1280, height=(int)720, format=(string)BGRx ! videoconvert ! appsink")) {
         QMessageBox::critical(
             nullptr, "Camera Error",

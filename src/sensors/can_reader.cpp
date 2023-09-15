@@ -48,6 +48,11 @@ CANReader::CANReader() {
             exit(3);
         }
     }
+    else
+    {
+        speed_id = 0x7DC;
+        speed_pos = 6;
+    }
     
 }
 
@@ -75,6 +80,7 @@ void CANReader::readCANSignal() {
             fprintf(stderr, "Dropped packet\n");
     }
     //      if(debug) fprint_canframe(stdout, &frame, "\n", 0, maxdlen);
+    fprint_canframe(stdout, &frame, "\n", 0, maxdlen);
     if (frame.can_id == signal_id) update_signal_status(&frame, maxdlen);
     if (frame.can_id == speed_id) update_speed_status(&frame, maxdlen);
 }
@@ -107,10 +113,17 @@ void CANReader::update_speed_status(struct canfd_frame *cf, int maxdlen) {
                             16;
         }
     } else {
-        int speed = cf->data[speed_pos] << 8;
-        speed += cf->data[speed_pos + 1];
-        speed = speed / 100;                // speed in kilometers
-        current_speed = speed * 0.6213751;  // mph
+        if (cf->data[0] == 0x21) //Kona EV display speed msg
+        {
+            #if 0
+            int speed = cf->data[speed_pos] << 8;
+            speed += cf->data[speed_pos + 1];
+            speed = speed / 100;                // speed in kilometers
+            #endif
+            int speed = cf->data[speed_pos];
+            current_speed = speed * 0.6213751;  // mph
+            fprintf(stdout, "car speed %dkph %dmph\n", speed, (int)current_speed);
+        }
     }
 }
 
