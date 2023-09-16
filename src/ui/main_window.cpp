@@ -90,8 +90,9 @@ MainWindow::MainWindow(QWidget *parent, bool is_simulation_mode)
 void MainWindow::cameraCaptureThread(std::shared_ptr<CarStatus> car_status) {
     cv::VideoCapture video;
     //               v4l2src device=/dev/video1 ! video/x-raw, width=1280, height=720, framerate=(fraction)60/1 ! videoconvert !  video/x-raw, width=(int)1280, height=(int)720, format=(string)BGR ! appsink
-    //if (!video.open("v4l2src device=/dev/video1 ! video/x-raw, width=1280, height=720, format=(string)YUY2 ! appsink")) {
-    if (!video.open("nvarguscamerasrc sensor-id=0 ! video/x-raw(memory:NVMM), width=1280, height=720, format=(string)NV12, framerate=(fraction)60/1 ! nvvidconv  flip-method=2 ! video/x-raw, width=(int)1280, height=(int)720, format=(string)BGRx ! videoconvert ! appsink")) {
+    //if (!video.open("v4l2src device=/dev/video1 ! video/x-raw, width=1280, height=720, framerate=(fraction)30/1 ! videoconvert !  video/x-raw, width=(int)1280, height=(int)720, format=(string)BGR ! appsink")) {
+    if (!video.open(0)) {
+    //if (!video.open("nvarguscamerasrc sensor-id=0 ! video/x-raw(memory:NVMM), width=1280, height=720, format=(string)NV12, framerate=(fraction)60/1 ! nvvidconv  flip-method=2 ! video/x-raw, width=(int)1280, height=(int)720, format=(string)BGRx ! videoconvert ! appsink")) {
         QMessageBox::critical(
             nullptr, "Camera Error",
             "Could not read from camera");
@@ -104,7 +105,20 @@ void MainWindow::cameraCaptureThread(std::shared_ptr<CarStatus> car_status) {
         if (frame.empty()) {
             continue;
         }
-        car_status->setCurrentImage(frame);
+        //rotate image 180
+        if(1)
+        {
+            int iAngle = 0;
+            int iImageHieght = frame.rows / 2;
+            int iImageWidth = frame.cols / 2;
+            Mat matRotation = cv::getRotationMatrix2D(cv::Point(iImageWidth, iImageHieght), (iAngle - 180), 1 );
+            // Rotate the image
+            Mat imgRotated;
+            cv::warpAffine( frame, imgRotated, matRotation, frame.size() );
+            car_status->setCurrentImage(imgRotated);
+        }
+        else
+            car_status->setCurrentImage(frame);
     }
 }
 
@@ -450,7 +464,7 @@ void MainWindow::startVideoGrabber() {
             pixmap.setPixmap(QPixmap::fromImage(qimg.rgbSwapped()));
             ui->graphicsView->fitInView(&pixmap, Qt::KeepAspectRatio);
 
-            ui->speedLabel->setText(QString("Speed: ") + QString::number(car_status->getCarSpeed()) + QString(" km/h"));
+            ui->speedLabel->setText(QString("Speed: ") + QString::number(car_status->getCarSpeed()) + QString(" mph"));
         }
 
         qApp->processEvents();

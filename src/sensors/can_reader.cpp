@@ -53,7 +53,6 @@ CANReader::CANReader() {
         speed_id = 0x7DC;
         speed_pos = 6;
     }
-    
 }
 
 void CANReader::readCANSignal() {
@@ -121,7 +120,7 @@ void CANReader::update_speed_status(struct canfd_frame *cf, int maxdlen) {
             speed = speed / 100;                // speed in kilometers
             #endif
             int speed = cf->data[speed_pos];
-            current_speed = speed * 0.6213751;  // mph
+            current_speed = speed * 0.6213751 + speed?3:0;  // mph, display speed adds 3
             fprintf(stdout, "car speed %dkph %dmph\n", speed, (int)current_speed);
         }
     }
